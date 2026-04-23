@@ -97,6 +97,7 @@
     // ═══════════════════════════════════════════════════════════════
     const D = {
       name: "오프라인 집체 교육 제1차",
+      attendMode: "MANUAL", // MANUAL(수동) | QR — 1차는 MANUAL 기본. QR은 순차 적용
       tags: ["#리더십", "#혁신", "#영업전략"],
       period: "2025-12-10 ~ 2026-05-31",
       desc: "Executive MBA 과정의 집중 오프라인 교육입니다.\n리더십 이론과 실무 사례를 기반으로 3일간 토론과 실습 중심으로 진행됩니다.\n\n· 1일차: 영업 환경 변화 및 혁신 사례 분석\n· 2일차: 리더십 스타일 진단 및 실습 워크숍\n· 3일차: 팀 프로젝트 수행과 최종 발표\n\n전 일정 출석 시 수료가 인정되며, 부득이한 결석은 사전에 운영팀과 협의해주세요.",
@@ -129,7 +130,7 @@
         ]},
         { id: 2, name: "2일차", date: "4월 3일 수요일", dateObj: "2024-04-03", schedules: [
           { id: 201, title: "리더십 스타일의 유형 및 효과적인 리더십 발휘 방안", time: "오전 9시 ~ 오전 12시", dur: "3시간", fd: "2024년 4월 3일 수요일", inst: "박신론", inst2: "나강사", tags: [], loc: null, desc: null, grp: null, ho: ["리더십 워크북.pdf", "사례집.pdf"], hs: "8.5MB", att: [
-            { round: 1, name: "입실", time: "09:00", status: "LATE" },
+            { round: 1, name: "입실", time: "09:00", status: "LATE", comment: "교통 지연으로 10분 지각, 출석 인정 처리" },
             { round: 2, name: "퇴실", time: "12:00", status: "PRESENT" },
           ]},
           { id: 202, title: "리더십 역량 강화를 위한 실습 및 토론", time: "오후 1시 ~ 오후 4시", dur: "3시간", fd: "2024년 4월 3일 수요일", inst: "박신론", inst2: null, tags: [], loc: null, desc: null, grp: null, ho: [], hs: null, att: [
@@ -138,8 +139,8 @@
         ]},
         { id: 3, name: "3일차", date: "4월 5일 금요일", dateObj: "2024-04-05", schedules: [
           { id: 301, title: "실전 프로젝트 워크샵 — 데이터 분석과 시각화", time: "오후 1시 ~ 오후 3시", dur: "2시간", fd: "2024년 4월 5일 금요일", inst: "김강사", inst2: null, tags: ["#프로젝트"], loc: "세미나실 B", desc: null, grp: null, ho: ["워크샵 가이드.pdf"], hs: "3.2MB", att: [
-            { round: 1, name: "입실", time: "13:00", status: "ABSENT" },
-            { round: 2, name: "퇴실", time: "15:00", status: "ABSENT" },
+            { round: 1, name: "입실", time: "13:00", status: "PENDING" },
+            { round: 2, name: "퇴실", time: "15:00", status: "PENDING" },
           ]},
           { id: 302, title: "팀 프로젝트 발표 및 피드백 세션", time: "오후 3시 ~ 오후 5시", dur: "2시간", fd: "2024년 4월 5일 금요일", inst: "박신론", inst2: null, tags: [], loc: null, desc: null, grp: null, ho: [], hs: null, att: [
             { round: 1, name: "입실", time: "15:00", status: "PENDING" },
@@ -193,14 +194,14 @@
               {passed}<span style={{ color: "#9ca3af", fontWeight: 400 }}>/{total}회</span>
             </span>
           </div>
-          {/* 막대바 분절 */}
+          {/* 막대바 분절 — 전체 출석 체크 건수를 균등 N분할 기준으로 100% 구성 (건당 동일 비중) */}
           <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", backgroundColor: "#f3f4f6" }}>
             {["PRESENT", "LATE", "EARLY_LEAVE", "ABSENT", "PENDING"].map(k => {
               const w = total > 0 ? ((cnts[k] || 0) / total) * 100 : 0;
               return w > 0 ? <div key={k} style={{ width: `${w}%`, backgroundColor: ST[k].dot, transition: "width .3s" }} /> : null;
             })}
           </div>
-          {/* 숫자 박스 (2열 2줄) */}
+          {/* 출결 데이터 표시 (2열 2줄) */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginTop: 8 }}>
             {[["PRESENT", "출석"], ["LATE", "지각/조퇴"], ["ABSENT", "결석"], ["PENDING", "미처리"]].map(([k, lb]) => (
               <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, backgroundColor: ST[k].bg, border: `1px solid ${ST[k].bd}` }}>
@@ -274,6 +275,7 @@
       // 이 schedule의 소속 session을 찾아 상태 판정
       const session = D.sessions.find(s => s.schedules.some(x => x.id === sc.id));
       const scheduleStatus = session ? getScheduleStatus(sc, session.dateObj) : "ENDED";
+      const [showAttendGuide, setShowAttendGuide] = useState(false);
       return (
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#fff", zIndex: 20, overflowY: "auto", animation: "su .25s ease" }}>
           <style>{`@keyframes su{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
@@ -306,14 +308,16 @@
             {sc.ho.length > 0 && (
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 6 }}>교안 {sc.ho.length}</div>
-                <button style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid #2563eb", backgroundColor: "#eff6ff", color: "#2563eb", fontWeight: 600, fontSize: 12, cursor: "pointer", marginBottom: 6 }}>
+                <button style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, border: "1px solid #2563eb", backgroundColor: "#eff6ff", color: "#2563eb", fontWeight: 600, fontSize: 12, cursor: "pointer", marginBottom: 6 }}>
                   모두받기 {sc.hs}
                 </button>
-                {sc.ho.map((h, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: "1px solid #f3f4f6", marginBottom: 3, fontSize: 11, color: "#374151" }}>
-                    ⬇ {h}
-                  </div>
-                ))}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                  {sc.ho.map((h, i) => (
+                    <div key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, border: "1px solid #f3f4f6", fontSize: 11, color: "#374151" }}>
+                      ⬇ {h}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             {sc.desc && (
@@ -323,29 +327,108 @@
               </div>
             )}
 
-            {/* 출석 체크 — 1회/2회/3회 (예정 상태에서는 미노출) */}
-            {scheduleStatus !== "WAITING" && (
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 8 }}>
-                  출석 체크 <span style={{ fontWeight: 400, color: "#9ca3af" }}>{sc.att.length}회</span>
+            {/* 출석 체크 — 1회/2회/3회 (전 상태 공통 노출) */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 8 }}>
+                출석 체크 <span style={{ fontWeight: 400, color: "#9ca3af" }}>{sc.att.length}회</span>
+              </div>
+              {sc.att.length === 0 ? (
+                <div style={{ padding: "14px 12px", borderRadius: 8, backgroundColor: "#f9fafb", border: "1px dashed #e5e7eb", textAlign: "center", fontSize: 12, color: "#9ca3af" }}>
+                  등록된 출석 체크가 없습니다
                 </div>
+              ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {sc.att.map((a, i) => {
                     const s = ST[a.status] || ST.PENDING;
+                    // 예정 상태 교육일정은 출석 결과가 아직 확정되지 않았으므로 출석 관련 정보 미노출
+                    const isWaiting = scheduleStatus === "WAITING";
+                    // 출석 인정: comment에 "출석 인정" 키워드가 있을 때 원본 상태가 지각/조퇴/결석인 경우 배지 노출
+                    const isAdjusted = !isWaiting && a.comment && a.comment.includes("출석 인정") && ["LATE", "EARLY_LEAVE", "ABSENT"].includes(a.status);
+                    // 수동 출석체크 방식일 때 각 회차에 안내 버튼 노출
+                    const showManualGuide = D.attendMode === "MANUAL";
                     return (
-                      <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 8, backgroundColor: a.comment ? "#fffbf5" : "#f9fafb", border: a.comment ? "1px solid #fed7aa" : "1px solid #f3f4f6" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: s.dot, flexShrink: 0 }} />
-                          <div>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{a.round}회</span>
-                            <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 6 }}>{a.name}</span>
-                            {a.time && <span style={{ fontSize: 11, color: "#d1d5db", marginLeft: 6 }}>{a.time}</span>}
+                      <div key={i} style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        padding: "10px 12px",
+                        borderRadius: 8,
+                        backgroundColor: a.comment && !isWaiting ? "#fffbf5" : "#f9fafb",
+                        border: a.comment && !isWaiting ? "1px solid #fed7aa" : "1px solid #f3f4f6",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flex: 1, minWidth: 0 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: isWaiting ? "#e5e7eb" : s.dot, flexShrink: 0, marginTop: 5 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{a.round}회</span>
+                              <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 6 }}>{a.name}</span>
+                              {a.time && !isWaiting && <span style={{ fontSize: 11, color: "#d1d5db", marginLeft: 6 }}>{a.time}</span>}
+                            </div>
+                            {a.comment && !isWaiting && (
+                              <div style={{ fontSize: 11, color: "#92400e", marginTop: 4, lineHeight: 1.4 }}>
+                                💬 {a.comment}
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: s.color, backgroundColor: s.bg, border: `1px solid ${s.bd}`, borderRadius: 4, padding: "2px 6px" }}>{s.label}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: 8 }}>
+                          {isAdjusted && (
+                            <span style={{ fontSize: 10, fontWeight: 600, color: "#16a34a", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "2px 6px" }}>출석 인정</span>
+                          )}
+                          {!isWaiting && (
+                            <span style={{ fontSize: 10, fontWeight: 600, color: s.color, backgroundColor: s.bg, border: `1px solid ${s.bd}`, borderRadius: 4, padding: "2px 6px" }}>{s.label}</span>
+                          )}
+                          {showManualGuide && (
+                            <button onClick={(e) => { e.stopPropagation(); setShowAttendGuide(true); }} style={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: "50%",
+                              border: "1px solid #e5e7eb",
+                              backgroundColor: "#fff",
+                              color: "#6b7280",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                              flexShrink: 0,
+                            }} title="출석 안내">ⓘ</button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            {/* 출석 안내 팝업 — 최종 정책 문구 반영 */}
+            {showAttendGuide && (
+              <div onClick={() => setShowAttendGuide(false)} style={{
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.4)", zIndex: 30,
+                display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+              }}>
+                <div onClick={(e) => e.stopPropagation()} style={{
+                  backgroundColor: "#fff", borderRadius: 12, padding: "20px 22px",
+                  maxWidth: 340, width: "100%", boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 16 }}>ⓘ</span>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: "#111", margin: 0 }}>출석 안내</h4>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.7, margin: "0 0 8px" }}>
+                    이 교육은 <strong>QR 출석 없이 운영자가 출석 정보를 직접 등록</strong>할 예정입니다.
+                  </p>
+                  <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.7, margin: "0 0 14px" }}>
+                    학습 기간과 관계없이 <strong>출석이 등록되는 시점에 수료 처리</strong>됩니다.
+                  </p>
+                  <button onClick={() => setShowAttendGuide(false)} style={{
+                    width: "100%", padding: "10px", borderRadius: 8, border: "none",
+                    backgroundColor: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 12, cursor: "pointer",
+                  }}>확인</button>
                 </div>
               </div>
             )}
@@ -368,22 +451,7 @@
                 </div>
               </div>
             )}
-            <button
-              disabled={scheduleStatus === "ENDED"}
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: 10,
-                border: "none",
-                backgroundColor: scheduleStatus === "ENDED" ? "#e5e7eb" : "#2563eb",
-                color: scheduleStatus === "ENDED" ? "#9ca3af" : "#fff",
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: scheduleStatus === "ENDED" ? "not-allowed" : "pointer",
-              }}
-            >
-              {scheduleStatus === "ENDED" ? "종료된 일정" : (scheduleStatus === "ONGOING" ? "📹 지금 참여하기" : "📹 참여하기")}
-            </button>
+
           </div>
         </div>
       );
@@ -1072,9 +1140,9 @@
 
               <div style={{ flex: 1 }} />
 
-              {/* 4. 다음 학습 이동 (우측 끝) */}
+              {/* 4. 학습 나가기 (우측 끝) */}
               <button
-                title="다음 학습 이동"
+                title="학습 나가기"
                 style={{
                   background: "none",
                   border: "none",
@@ -1087,8 +1155,9 @@
                 }}
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <polyline points="9,18 15,12 9,6"/>
-                  <line x1="15" y1="12" x2="3" y2="12"/>
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                  <polyline points="16,17 21,12 16,7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </button>
             </div>
