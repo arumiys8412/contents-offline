@@ -453,7 +453,7 @@
           <div style={{ position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1, padding: "14px 18px 10px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: "#111", margin: 0 }}>출석 체크</h3>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>전체 {flat.length}건 · 시간순</div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>전체 {flat.length}회 · 시간순</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
               {showManualGuide && (
@@ -483,7 +483,7 @@
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <AttStatusIcon status={a.isWaiting ? "PENDING" : a.status} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{i + 1}회차</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{i + 1}회</span>
                           {!a.isWaiting && (
                             <span style={{ fontSize: 14, fontWeight: 500, color: "#9ca3af", marginLeft: 8 }}>{a.dateLabel}</span>
                           )}
