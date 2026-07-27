@@ -433,7 +433,6 @@
     // ═══════════════════════════════════════════════════════════════
     function AttendanceDetailPanel({ onClose }) {
       const [showGuide, setShowGuide] = useState(false);
-      const [expanded, setExpanded] = useState({});
       const showManualGuide = D.attendMode === "MANUAL";
 
       // 전체 출석 체크를 날짜·시각 순으로 통합 (그룹 없이 flat 리스트)
@@ -477,7 +476,6 @@
                 {flat.map((a, i) => {
                   const s = ST[a.status] || ST.PENDING;
                   const isAdjusted = !a.isWaiting && a.comment && a.comment.includes("출석 인정") && ["LATE", "EARLY_LEAVE", "ABSENT"].includes(a.status);
-                  const isOpen = !!expanded[i];
                   return (
                     <div key={i} style={{ borderRadius: 14, backgroundColor: "#f4f6fb", padding: "12px 14px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -499,8 +497,8 @@
                             <span style={{ fontSize: 11, fontWeight: 600, color: s.color, backgroundColor: s.bg, border: `1px solid ${s.bd}`, borderRadius: 6, padding: "3px 8px" }}>{s.label}</span>
                           )}
                           <button
-                            onClick={() => setExpanded(p => ({ ...p, [i]: !p[i] }))}
-                            title="상세 정보"
+                            onClick={() => setShowGuide(true)}
+                            title="출석 안내"
                             style={{
                               width: 22, height: 22, borderRadius: "50%", border: "1px solid #d1d5db",
                               backgroundColor: "#fff", color: "#9ca3af", fontSize: 11, fontWeight: 700,
@@ -509,11 +507,6 @@
                           >i</button>
                         </div>
                       </div>
-                      {isOpen && (
-                        <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #e5e7eb", fontSize: 12, color: "#6b7280", lineHeight: 1.6 }}>
-                          {a.comment ? <>💬 {a.comment}</> : "등록된 코멘트가 없습니다"}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
